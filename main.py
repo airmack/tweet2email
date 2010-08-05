@@ -1,15 +1,20 @@
 #!/usr/bin/env python
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -
 ## VERSION: Donnerstag 5 August 2010 12:03
+## ALLES VON MIR airmack (ÄT) fedev.eu <-- vertauschen 
 
 import smtplib
-#from  mechanize import Browser
 import json
 import urllib2
 import getpass
 import sqlite3
 import base64
 import sys
+
+from email.MIMEText import MIMEText
+from email.Header import Header
+from email.Utils import parseaddr, formataddr
+
 
 
 
@@ -57,13 +62,11 @@ def main(argv=None):
 			c.execute('select * from history where id=?',(msg_id[j],))
 			z=c.fetchone()
 			if not z:
-				try:
-					sendmail(msg[j], email, name[i])
-					c.execute('insert into history(id) values (?)', (msg_id[j],))
-					conn.commit()
-				except:
-					print "Trouble sending and commiting\n"
-					continue
+				message=msg[j]
+				tweeter=name[i]
+				sendmail(message, email, tweeter)
+				c.execute('insert into history(id) values (?)', (msg_id[j],))
+				conn.commit()
 			else:
 				continue
 	c.close()
@@ -126,11 +129,30 @@ class tweet2email:
 			header = 'Basic %s' % basic_auth
 		return header 
 
-def sendmail(message, user, email, tweeter ):
-	msg= "From: tweet2email@localhost\r\nTo: "+email+"Subject: [tweet2email]: "+tweeter+"\r\n\r\n"+message
-	server = smtplib.SMTP('localhost')
-	server.sendmail("tweet2email@localhost", email, msg)
-	server.quit()
+def sendmail(message, email, tweeter ):
+	header_charset = 'ISO-8859-1'
+
+	for body_charset in 'US-ASCII', 'ISO-8859-1', 'UTF-8':
+		try:
+			message.encode(body_charset)
+		except UnicodeError:
+			pass
+		else:
+			break
+	subject="[tweet2email] "+tweeter
+	sender_name = str(Header(unicode('tweet2email'), header_charset))
+	sender_addr = str(Header(unicode('tweet2email@localhost'), header_charset))
+	recipient_name = str(Header(unicode(email), header_charset))
+	recipient_addr = str(Header(unicode(email), header_charset))
+	sender_addr = sender_addr.encode('ascii')
+	recipient_addr = recipient_addr.encode('ascii')
+	msg = MIMEText(message.encode(body_charset), 'plain', body_charset)
+	msg['From'] = formataddr((sender_name, sender_addr))
+	msg['To'] = formataddr((recipient_name, recipient_addr))
+	msg['Subject'] = Header(unicode(subject), header_charset)
+	smtp = smtplib.SMTP("localhost")
+	smtp.sendmail(sender_addr, recipient_addr, msg.as_string())
+	smtp.quit()
 
 if __name__ == "__main__":
 	main(sys.argv)
