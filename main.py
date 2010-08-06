@@ -55,7 +55,7 @@ def main(argv=None):
 	t=tweet2email(user, password)
 	[id, name]=t.getfriendsid()
 	for i in range(0,len(id)):
-		[msg,msg_id]=t.get_tweets(id[i])
+		[msg,msg_id,date]=t.get_tweets(id[i])
 		print str(i)+") "+str(name[i])+" with "+str(len(msg_id))+" messages\n"
 		for j in range(0,len(msg_id)):
 			print "- "+str(msg_id[j])+"\n"
@@ -64,7 +64,7 @@ def main(argv=None):
 			if not z:
 				message=msg[j]
 				tweeter=name[i]
-				sendmail(message, email, tweeter)
+				sendmail(message, email, tweeter, date[j])
 				c.execute('insert into history(id) values (?)', (msg_id[j],))
 				conn.commit()
 			else:
@@ -115,12 +115,14 @@ class tweet2email:
 		msg=json.loads(handle.read())
 		txt=[]
 		msg_id=[]
+		date=[]
 		if len(msg)==0:
 			print "Keine rückgabe\n"
 		for i in msg:
 			txt.append(i['text'])
 			msg_id.append(i['id'])
-		return [txt, msg_id] 
+			date.append(['created_at'])
+		return [txt, msg_id,date] 
 
 	def auth_header(self, username, password):
 		header=[];
@@ -129,7 +131,7 @@ class tweet2email:
 			header = 'Basic %s' % basic_auth
 		return header 
 
-def sendmail(message, email, tweeter ):
+def sendmail(message, email, tweeter,date ):
 	header_charset = 'ISO-8859-1'
 
 	for body_charset in 'US-ASCII', 'ISO-8859-1', 'UTF-8':
@@ -150,6 +152,7 @@ def sendmail(message, email, tweeter ):
 	msg['From'] = formataddr((sender_name, sender_addr))
 	msg['To'] = formataddr((recipient_name, recipient_addr))
 	msg['Subject'] = Header(unicode(subject), header_charset)
+	msg['Date'] = Header(unicode(date), header_charset)
 	smtp = smtplib.SMTP("localhost")
 	smtp.sendmail(sender_addr, recipient_addr, msg.as_string())
 	smtp.quit()
