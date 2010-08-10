@@ -1,0 +1,10 @@
+=Requirement=
+*python
+*sqlite3 support
+
+=How to get started=
+*run main.py
+*insert twitter user password and the receiving email address
+*add to cron to run hourly e.g
+
+5 7-23 * * * ~/tweet2email/main.py

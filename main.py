@@ -121,7 +121,7 @@ class tweet2email:
 		for i in msg:
 			txt.append(i['text'])
 			msg_id.append(i['id'])
-			date.append(['created_at'])
+			date.append(i['created_at'])
 		return [txt, msg_id,date] 
 
 	def auth_header(self, username, password):
@@ -152,7 +152,10 @@ def sendmail(message, email, tweeter,date ):
 	msg['From'] = formataddr((sender_name, sender_addr))
 	msg['To'] = formataddr((recipient_name, recipient_addr))
 	msg['Subject'] = Header(unicode(subject), header_charset)
-	msg['Date'] = Header(unicode(date), header_charset)
+	if date:
+		cell=date.split()
+		date=cell[0]+', '+cell[2]+' '+cell[1]+' '+cell[5]+' '+cell[3]+ ' '+cell[4]
+		msg['Date'] = Header(unicode(date), header_charset)
 	smtp = smtplib.SMTP("localhost")
 	smtp.sendmail(sender_addr, recipient_addr, msg.as_string())
 	smtp.quit()
